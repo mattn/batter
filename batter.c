@@ -1,6 +1,17 @@
 #include <windows.h>
 #include <string.h>
+#include <signal.h>
 #include <stdio.h>
+
+BOOL WINAPI
+ctrlhandler(DWORD t) {
+  if (t == CTRL_C_EVENT || t == CTRL_BREAK_EVENT) {
+    GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+    GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, 0);
+    return FALSE;
+  }
+  return FALSE;
+}
 
 int
 emsg() {
@@ -51,6 +62,8 @@ main(int argc, char* argv[]) {
       NULL, NULL, &si, &pi))
     r = emsg();
   else {
+    SetConsoleCtrlHandler(ctrlhandler, TRUE);
+    signal(SIGINT, SIG_IGN);
     CloseHandle(pi.hThread);
     if (WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_FAILED)
       r = emsg();
