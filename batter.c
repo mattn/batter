@@ -33,16 +33,17 @@ main(int argc, char* argv[]) {
   STARTUPINFO si = {0};
   PROCESS_INFORMATION pi = {0};
   int r;
-  char *p, *t;
+  char *p, *t, *e;
   t = p = strdup(GetCommandLine());
   if (!p) return -1;
   if (*p == '"')
     do p++; while (*p && *p != '"');
   else
     while (*p && *p != ' ') p++;
-  if (!strncasecmp(p-4, ".exe", 4))
-    memcpy(p-4, ".bat", 4);
-  else {
+  if (!strncasecmp(p-4, ".exe", 4)) {
+    e = p - 3;
+    memcpy(e, "bat", 3);
+  } else {
     char *comspec = getenv("COMSPEC"), *b;
     if (!comspec) comspec = "CMD";
     b = malloc(strlen(comspec) + 1 + 9 + strlen(t) + 5);
@@ -50,11 +51,14 @@ main(int argc, char* argv[]) {
     strcat(b, comspec);
     strcat(b, " /c call ");
     strncat(b, t, (int) (p-t));
+    e = b + strlen(b) + 1;
     strcat(b, ".bat");
     strcat(b, p);
     free(t);
     t = b;
   }
+  if (GetFileAttributes(t) == -1)
+    memcpy(e, "cmd", 3);
   si.cb = sizeof(si);
   if (!CreateProcess(
       NULL, t, NULL, NULL, TRUE,
